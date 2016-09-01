@@ -18,8 +18,18 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "../SDL_internal.h"
+#ifndef _SDL_uikitclipboard_h
+#define _SDL_uikitclipboard_h
 
-#define SDL_AllocAudioMem   SDL_malloc
-#define SDL_FreeAudioMem    SDL_free
+#include "../SDL_sysvideo.h"
+
+extern int UIKit_SetClipboardText(_THIS, const char *text);
+extern char *UIKit_GetClipboardText(_THIS);
+extern SDL_bool UIKit_HasClipboardText(_THIS);
+
+extern void UIKit_InitClipboard(_THIS);
+extern void UIKit_QuitClipboard(_THIS);
+
+#endif /* _SDL_uikitclipboard_h */
+
 /* vi: set ts=4 sw=4 expandtab: */

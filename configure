@@ -630,6 +630,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+WAYLAND_SCANNER
 EXTRA_LDFLAGS
 BUILD_LDFLAGS
 EXTRA_CFLAGS
@@ -637,6 +638,8 @@ BUILD_CFLAGS
 SDLTEST_OBJECTS
 SDLMAIN_OBJECTS
 VERSION_OBJECTS
+GEN_OBJECTS
+GEN_HEADERS
 OBJECTS
 INCLUDE
 ac_aux_dir
@@ -18650,6 +18653,43 @@ $as_echo "$have_gcc_preferred_stack_boundary" >&6; }
     fi
 }
 
+CheckDeclarationAfterStatement()
+{
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GCC -Wdeclaration-after-statement option" >&5
+$as_echo_n "checking for GCC -Wdeclaration-after-statement option... " >&6; }
+    have_gcc_declaration_after_statement=no
+
+    save_CFLAGS="$CFLAGS"
+    CFLAGS="$save_CFLAGS -Wdeclaration-after-statement -Werror=declaration-after-statement"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    int x = 0;
+
+int
+main ()
+{
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+    have_gcc_declaration_after_statement=yes
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_declaration_after_statement" >&5
+$as_echo "$have_gcc_declaration_after_statement" >&6; }
+    CFLAGS="$save_CFLAGS"
+
+    if test x$have_gcc_declaration_after_statement = xyes; then
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -Wdeclaration-after-statement -Werror=declaration-after-statement"
+    fi
+}
+
 CheckWarnAll()
 {
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GCC -Wall option" >&5
@@ -18767,9 +18807,12 @@ $as_echo_n "checking for Wayland support... " >&6; }
         if  test x$PKG_CONFIG != xno && \
             test x$video_opengl_egl = xyes && \
             test x$video_opengles_v2 = xyes; then
-            if $PKG_CONFIG --exists wayland-client wayland-egl wayland-cursor egl xkbcommon ; then
+            if $PKG_CONFIG --exists wayland-client wayland-scanner wayland-protocols wayland-egl wayland-cursor egl xkbcommon ; then
                 WAYLAND_CFLAGS=`$PKG_CONFIG --cflags wayland-client wayland-egl wayland-cursor xkbcommon`
                 WAYLAND_LIBS=`$PKG_CONFIG --libs wayland-client wayland-egl wayland-cursor xkbcommon`
+                WAYLAND_SCANNER=`$PKG_CONFIG --variable=wayland_scanner wayland-scanner`
+                WAYLAND_CORE_PROTOCOL_DIR=`$PKG_CONFIG --variable=pkgdatadir wayland-client`
+                WAYLAND_PROTOCOLS_DIR=`$PKG_CONFIG --variable=pkgdatadir wayland-protocols`
                 video_wayland=yes
             fi
         fi
@@ -18785,8 +18828,11 @@ $as_echo "#define SDL_VIDEO_DRIVER_WAYLAND 1" >>confdefs.h
 $as_echo "#define SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH 1" >>confdefs.h
 
             fi
+
+            WAYLAND_PROTOCOLS_UNSTABLE="relative-pointer-unstable-v1 pointer-constraints-unstable-v1"
+
             SOURCES="$SOURCES $srcdir/src/video/wayland/*.c"
-            EXTRA_CFLAGS="$EXTRA_CFLAGS $WAYLAND_CFLAGS"
+            EXTRA_CFLAGS="$EXTRA_CFLAGS $WAYLAND_CFLAGS -I\$(gen)"
             # Check whether --enable-wayland-shared was given.
 if test "${enable_wayland_shared+set}" = set; then :
   enableval=$enable_wayland_shared;
@@ -18928,7 +18974,7 @@ int
 main ()
 {
 
-                    MirMotionToolType tool = mir_motion_tool_type_mouse;
+                    MirPointerButton button = mir_pointer_button_primary;
 
   ;
   return 0;
@@ -22894,6 +22940,8 @@ fi
 
 }
 
+CheckWarnAll
+
 case "$host" in
     *-*-linux*|*-*-uclinux*|*-*-gnu*|*-*-k*bsd*-gnu|*-*-bsdi*|*-*-freebsd*|*-*-dragonfly*|*-*-netbsd*|*-*-openbsd*|*-*-sysv5*|*-*-solaris*|*-*-hpux*|*-*-aix*|*-*-minix*)
         case "$host" in
@@ -22962,6 +23010,7 @@ case "$host" in
             *-*-minix*)         ARCH=minix ;;
         esac
         CheckVisibilityHidden
+        CheckDeclarationAfterStatement
         CheckDummyVideo
         CheckDiskAudio
         CheckDummyAudio
@@ -23392,6 +23441,7 @@ $as_echo "#define SDL_FILESYSTEM_HAIKU 1" >>confdefs.h
         ARCH=ios
 
         CheckVisibilityHidden
+        CheckDeclarationAfterStatement
         CheckDummyVideo
         CheckDiskAudio
         CheckDummyAudio
@@ -23461,6 +23511,7 @@ $as_echo "#define SDL_FILESYSTEM_HAIKU 1" >>confdefs.h
         EXTRA_CFLAGS="$EXTRA_CFLAGS -DTARGET_API_MAC_OSX"
 
         CheckVisibilityHidden
+        CheckDeclarationAfterStatement
         CheckDummyVideo
         CheckDiskAudio
         CheckDummyAudio
@@ -23581,6 +23632,7 @@ $as_echo "#define SDL_AUDIO_DRIVER_EMSCRIPTEN 1" >>confdefs.h
         fi
 
         CheckVisibilityHidden
+        CheckDeclarationAfterStatement
         CheckDummyVideo
         CheckDiskAudio
         CheckDummyAudio
@@ -23629,8 +23681,6 @@ $as_echo "#define SDL_TIMER_UNIX 1" >>confdefs.h
         " "$LINENO" 5
         ;;
 esac
-
-CheckWarnAll
 
 # Verify that we have all the platform specific files we need
 
@@ -23687,6 +23737,57 @@ if test x$SDLMAIN_SOURCES = x; then
 fi
 SDLTEST_SOURCES="$srcdir/src/test/*.c"
 
+if test x$video_wayland = xyes; then
+    WAYLAND_CORE_PROTOCOL_SOURCE='$(gen)/wayland-protocol.c'
+    WAYLAND_CORE_PROTOCOL_HEADER='$(gen)/wayland-client-protocol.h'
+    WAYLAND_PROTOCOLS_UNSTABLE_SOURCES=`echo $WAYLAND_PROTOCOLS_UNSTABLE |\
+        sed 's,[^ ]\+,\\$(gen)/&-protocol.c,g'`
+    WAYLAND_PROTOCOLS_UNSTABLE_HEADERS=`echo $WAYLAND_PROTOCOLS_UNSTABLE |\
+        sed 's,[^ ]\+,\\$(gen)/&-client-protocol.h,g'`
+    GEN_SOURCES="$GEN_SOURCES $WAYLAND_CORE_PROTOCOL_SOURCE $WAYLAND_PROTOCOLS_UNSTABLE_SOURCES"
+    GEN_HEADERS="$GEN_HEADERS $WAYLAND_CORE_PROTOCOL_HEADER $WAYLAND_PROTOCOLS_UNSTABLE_HEADERS"
+
+    WAYLAND_CORE_PROTOCOL_SOURCE_DEPENDS="
+$WAYLAND_CORE_PROTOCOL_SOURCE: $WAYLAND_CORE_PROTOCOL_DIR/wayland.xml
+	\$(SHELL) \$(auxdir)/mkinstalldirs \$(gen)
+	\$(RUN_CMD_GEN)\$(WAYLAND_SCANNER) code \$< \$@"
+
+    WAYLAND_CORE_PROTOCOL_HEADER_DEPENDS="
+$WAYLAND_CORE_PROTOCOL_HEADER: $WAYLAND_CORE_PROTOCOL_DIR/wayland.xml
+	\$(SHELL) \$(auxdir)/mkinstalldirs \$(gen)
+	\$(RUN_CMD_GEN)\$(WAYLAND_SCANNER) client-header \$< \$@"
+
+    WAYLAND_CORE_PROTOCOL_OBJECT="
+\$(objects)/`echo $WAYLAND_CORE_PROTOCOL_SOURCE | sed 's/\$(gen)\/\(.*\).c$/\1.lo/'`: $WAYLAND_CORE_PROTOCOL_SOURCE
+	\$(RUN_CMD_CC)\$(LIBTOOL) --tag=CC --mode=compile \$(CC) \$(CFLAGS) \$(EXTRA_CFLAGS) $DEPENDENCY_TRACKING_OPTIONS -c \$< -o \$@"
+
+    WAYLAND_PROTOCOLS_CLIENT_HEADER_UNSTABLE_DEPENDS=`for p in $WAYLAND_PROTOCOLS_UNSTABLE;\
+        do echo ; echo \$p | sed\
+        "s,^\\([a-z\\-]\\+\\)-unstable-\\(v[0-9]\+\\)\$,\\$(gen)/&-client-protocol.h: $WAYLAND_PROTOCOLS_DIR/unstable/\1/&.xml\\\\
+	\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)\\\\
+	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) client-header \\$< \\$@," ; done`
+
+    WAYLAND_PROTOCOLS_CODE_UNSTABLE_DEPENDS=`for p in $WAYLAND_PROTOCOLS_UNSTABLE;\
+        do echo ; echo \$p | sed\
+        "s,^\\([a-z\\-]\\+\\)-unstable-\\(v[0-9]\+\\)\$,\\$(gen)/&-protocol.c: $WAYLAND_PROTOCOLS_DIR/unstable/\1/&.xml\\\\
+	\\$(SHELL) \\$(auxdir)/mkinstalldirs \\$(gen)\\\\
+	\\$(RUN_CMD_GEN)\\$(WAYLAND_SCANNER) code \\$< \\$@," ; done`
+
+    WAYLAND_PROTOCOLS_OBJECTS_UNSTABLE=`for p in $WAYLAND_PROTOCOLS_UNSTABLE;\
+        do echo ; echo \$p | sed\
+        "s,^\\([a-z\\-]\\+\\)-unstable-\\(v[0-9]\+\\)\$,\\\$(objects)/&-protocol.lo: \\$(gen)/&-protocol.c \\$(gen)/&-client-protocol.h\\\\
+	\\$(RUN_CMD_CC)\\$(LIBTOOL) --tag=CC --mode=compile \\$(CC) \\$(CFLAGS) \\$(EXTRA_CFLAGS) $DEPENDENCY_TRACKING_OPTIONS -c \\$< -o \\$@," ; done`
+
+    WAYLAND_PROTOCOLS_DEPENDS="
+$WAYLAND_CORE_PROTOCOL_SOURCE_DEPENDS
+$WAYLAND_CORE_PROTOCOL_HEADER_DEPENDS
+$WAYLAND_CORE_PROTOCOL_OBJECT
+$WAYLAND_PROTOCOLS_CLIENT_HEADER_UNSTABLE_DEPENDS
+$WAYLAND_PROTOCOLS_CODE_UNSTABLE_DEPENDS
+$WAYLAND_PROTOCOLS_OBJECTS_UNSTABLE
+"
+fi
+
 OBJECTS=`echo $SOURCES`
 DEPENDS=`echo $SOURCES | tr ' ' '\n'`
 for EXT in asm cc m c S; do
@@ -23695,6 +23796,8 @@ for EXT in asm cc m c S; do
 \\$(objects)/\\2.lo: \\1/\\2.$EXT\\\\
 	\\$(RUN_CMD_CC)\\$(LIBTOOL) --tag=CC --mode=compile \\$(CC) \\$(CFLAGS) \\$(EXTRA_CFLAGS) $DEPENDENCY_TRACKING_OPTIONS -c \\$< -o \\$@,g"`
 done
+
+GEN_OBJECTS=`echo "$GEN_SOURCES" | sed 's,[^ ]*/\([^ ]*\)\.c,$(objects)/\1.lo,g'`
 
 VERSION_OBJECTS=`echo $VERSION_SOURCES`
 VERSION_DEPENDS=`echo $VERSION_SOURCES`
@@ -23722,6 +23825,36 @@ SDLTEST_DEPENDS=`echo "$SDLTEST_DEPENDS" | sed "s,\\([^ ]*\\)/\\([^ ]*\\)\\.c,\\
 if test "x$enable_rpath" = "xyes"; then
   if test $ARCH = bsdi -o $ARCH = freebsd -o $ARCH = linux -o $ARCH = netbsd; then
     SDL_RLD_FLAGS="-Wl,-rpath,\${libdir}"
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for linker option --enable-new-dtags" >&5
+$as_echo_n "checking for linker option --enable-new-dtags... " >&6; }
+    have_enable_new_dtags=no
+    save_LDFLAGS="$LDFLAGS"
+    LDFLAGS="$LDFLAGS -Wl,--enable-new-dtags"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    have_enable_new_dtags=yes
+    SDL_RLD_FLAGS="$SDL_RLD_FLAGS -Wl,--enable-new-dtags"
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    LDFLAGS="$save_LDFLAGS"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_enable_new_dtags" >&5
+$as_echo "$have_enable_new_dtags" >&6; }
   fi
   if test $ARCH = solaris; then
     SDL_RLD_FLAGS="-R\${libdir}"
@@ -23767,6 +23900,9 @@ fi
 
 
 
+
+
+
 cat >Makefile.rules <<__EOF__
 
 # Build rules for objects
@@ -23778,6 +23914,7 @@ $DEPENDS
 $VERSION_DEPENDS
 $SDLMAIN_DEPENDS
 $SDLTEST_DEPENDS
+$WAYLAND_PROTOCOLS_DEPENDS
 __EOF__
 
 ac_config_files="$ac_config_files Makefile:Makefile.in:Makefile.rules sdl2-config sdl2-config.cmake SDL2.spec sdl2.pc"
