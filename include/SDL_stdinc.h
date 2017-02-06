@@ -563,7 +563,7 @@ extern DECLSPEC char *SDLCALL SDL_iconv_string(const char *tocode,
 
 /* force builds using Clang's static analysis tools to use literal C runtime
    here, since there are possibly tests that are ineffective otherwise. */
-#if defined(__clang_analyzer__) && !defined(SDL_DISABLE_ANALYZE_MACROS)
+#if defined(__clang_analyzer__) && !defined(SDL_DISABLE_ANALYZE_MACROS) && false // use of undeclared identifier '...'
 #define SDL_malloc malloc
 #define SDL_calloc calloc
 #define SDL_realloc realloc
