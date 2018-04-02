@@ -24,6 +24,9 @@
 #include "../SDL_internal.h"
 #endif
 
+// clang complains that it cannot find _cpuid. Include intrin.h to make it available.
+#include <intrin.h>
+
 #if defined(__WIN32__)
 #include "../core/windows/SDL_windows.h"
 #endif
